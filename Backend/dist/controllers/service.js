@@ -40,5 +40,33 @@ function createService(req, res) {
     });
 }
 function updateService(req, res) {
-    return __awaiter(this, void 0, void 0, function* () { });
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { id } = req.params;
+            const serviceId = parseInt(id);
+            if (!serviceId) {
+                return res.status(400).json({ msg: "Invalid Service ID" });
+            }
+            const service = yield db_1.default.service.findUnique({
+                where: { id: serviceId },
+            });
+            if (!service) {
+                return res.status(400).json({ msg: "Service Not Found" });
+            }
+            const { serviceName, unit, pricePerUnit } = req.body;
+            const updateService = yield db_1.default.service.update({
+                where: {
+                    id: serviceId,
+                },
+                data: { serviceName, unit, pricePerUnit },
+            });
+            res
+                .status(200)
+                .json({ msg: "Service Updated Successfully", data: updateService });
+        }
+        catch (err) {
+            res.status(404).json({ msg: "Service Not found", err: err });
+            console.log(err);
+        }
+    });
 }

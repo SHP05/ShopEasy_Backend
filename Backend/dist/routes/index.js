@@ -9,4 +9,4 @@ exports.router.get("/", (req, res) => {
     res.json({ msg: "Welcome to Shop Easy !!" });
 });
 exports.router.use("/user", user_1.router);
-exports.router.use("/user", service_1.router);
+exports.router.use("/service", service_1.router);

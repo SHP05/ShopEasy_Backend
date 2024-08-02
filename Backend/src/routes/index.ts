@@ -8,4 +8,4 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 router.use("/user", userRouter);
-router.use("/user", serviceRouter);
+router.use("/service", serviceRouter);

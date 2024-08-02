@@ -26,14 +26,35 @@ export async function createService(req: Request, res: Response) {
 }
 
 export async function updateService(req: Request, res: Response) {
-  const { userId , unit, pricePerUnit } = req.body;
+  try {
+    const { id } = req.params;
+    const serviceId = parseInt(id);
 
-  // const updateService = await prisma.service.update({
-  //   data:{ userId , unit , pricePerUnit },
-  //   select: {
-  //     id: true,
-  //     unit: true,
-  //     pricePerUnit: true
-  //   }
-  // })
+    if (!serviceId) {
+      return res.status(400).json({ msg: "Invalid Service ID" });
+    }
+
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+    });
+
+    if(!service){
+      return res.status(400).json({msg: "Service Not Found"});
+    }
+
+    const { serviceName, unit, pricePerUnit } = req.body;
+
+    const updateService = await prisma.service.update({
+      where: {
+        id: serviceId,
+      },
+      data: { serviceName, unit, pricePerUnit },
+    });
+    res
+      .status(200)
+      .json({ msg: "Service Updated Successfully", data: updateService });
+  } catch (err) {
+    res.status(404).json({ msg: "Service Not found", err: err });
+    console.log(err);
+  }
 }
