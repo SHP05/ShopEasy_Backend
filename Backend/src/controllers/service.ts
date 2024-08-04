@@ -1,8 +1,12 @@
-import prisma from "../db";
-import { Request, Response, Router } from "express";
-import { ErrorHandler } from "../helpers/error";
+import prisma from '../db';
+import { NextFunction, Request, Response, Router } from 'express';
+import { ErrorHandler } from '../helpers/error';
 
-export async function createService(req: Request, res: Response) {
+export async function createService(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   try {
     const { userId, serviceName, unit, pricePerUnit } = req.body;
 
@@ -19,21 +23,23 @@ export async function createService(req: Request, res: Response) {
 
     res
       .status(201)
-      .json({ msg: "Service created Successfully", data: service });
+      .json({ msg: 'Service created Successfully', data: service });
   } catch (err) {
-    console.log(err);
-    throw new ErrorHandler("Error occurred while creating Service", 500);
-    // res.status(500).json({ msg: "Internal Server Error" });
+    return next(new ErrorHandler('Service : Internal Server Error !', 500));
   }
 }
 
-export async function updateService(req: Request, res: Response) {
+export async function updateService(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   try {
     const { id } = req.params;
     const serviceId = parseInt(id);
 
     if (!serviceId) {
-      return res.status(400).json({ msg: "Invalid Service ID" });
+      return next(new ErrorHandler('Invalid Service ID !', 400));
     }
 
     const service = await prisma.service.findUnique({
@@ -41,7 +47,7 @@ export async function updateService(req: Request, res: Response) {
     });
 
     if (!service) {
-      return res.status(400).json({ msg: "Service Not Found" });
+      return next(new ErrorHandler('Service Not Found !', 400));
     }
 
     const { serviceName, unit, pricePerUnit } = req.body;
@@ -54,19 +60,23 @@ export async function updateService(req: Request, res: Response) {
     });
     res
       .status(200)
-      .json({ msg: "Service Updated Successfully", data: updateService });
+      .json({ msg: 'Service Updated Successfully', data: updateService });
   } catch (err) {
-    throw new ErrorHandler("Error occurred while Updating Service", 500);
-    // res.status(500).json({ msg: "Internal server Error", err: err });
-    console.log(err);
+    return next(
+      new ErrorHandler('Update Service : Internal Server Error !', 500)
+    );
   }
 }
 
-export async function deleteService(req: Request, res: Response) {
+export async function deleteService(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { id } = req.params;
   try {
     if (!id) {
-      return res.status(400).json({ msg: "Invalid Service ID" });
+      return next(new ErrorHandler('Invalid Service ID!', 400));
     }
 
     const service = await prisma.service.findUnique({
@@ -74,15 +84,15 @@ export async function deleteService(req: Request, res: Response) {
     });
 
     if (!service) {
-      return res.status(400).json({ msg: "Service Not Found !" });
+      return next(new ErrorHandler('Service Not Found !', 400));
     }
 
     await prisma.service.delete({ where: { id: parseInt(id) } }).then(() => {
-      res.status(400).json({ msg: "Service Deleted Successfully!" });
+      res.status(400).json({ msg: 'Service Deleted Successfully!' });
     });
   } catch (error) {
-    console.log("Error Deleting Service :", error);
-    throw new ErrorHandler("Error occurred while Deleting Service", 500);
-    // res.status(500).json({ msg: "Internal Server Error" });
+    return next(
+      new ErrorHandler('Delete Service : Internal Server Error', 500)
+    );
   }
 }

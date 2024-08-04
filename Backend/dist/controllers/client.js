@@ -16,7 +16,8 @@ exports.createClient = createClient;
 exports.updateClient = updateClient;
 exports.delteClient = delteClient;
 const db_1 = __importDefault(require("../db"));
-function createClient(req, res) {
+const error_1 = require("../helpers/error");
+function createClient(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const { name, userId, contactInfo } = req.body;
         try {
@@ -43,12 +44,12 @@ function createClient(req, res) {
         }
         catch (error) {
             console.log('Client error: ', error);
-            res.status(404).json({ msg: 'Client is Not Created !' });
-            // throw new ErrorHandler('Client is Not created !', 500);
+            // res.status(404).json({ msg: 'Client is Not Created !' });
+            return next(new error_1.ErrorHandler('Client : Client is Not created !', 500));
         }
     });
 }
-function updateClient(req, res) {
+function updateClient(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const { name, contactInfo } = req.body;
         const { id } = req.params;
@@ -57,8 +58,8 @@ function updateClient(req, res) {
                 where: { id: parseInt(id) },
             });
             if (!client) {
-                res.status(400).json({ msg: 'Client not Found !' });
-                //   return new ErrorHandler('Client Not Found !', 400);
+                // res.status(400).json({ msg: 'Client not Found !' });
+                return next(new error_1.ErrorHandler('Client Not Found !', 400));
             }
             const UpdatedClient = yield db_1.default.client.update({
                 where: { id: parseInt(id) },
@@ -77,12 +78,12 @@ function updateClient(req, res) {
                 .json({ msg: 'Client Updated Successfully', data: UpdatedClient });
         }
         catch (error) {
-            res.status(500).json({ msg: 'Client Not Updated !' });
-            // throw new ErrorHandler('Client Not Updated !', 500);
+            // res.status(500).json({ msg: 'Internal Server Error!!' });
+            return next(new error_1.ErrorHandler('Client: Internal Server Error!', 500));
         }
     });
 }
-function delteClient(req, res) {
+function delteClient(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const { id } = req.params;
         try {
@@ -90,13 +91,16 @@ function delteClient(req, res) {
                 where: { id: parseInt(id) },
             });
             if (!client) {
-                res.status(404).json({ msg: 'Invalid Id or Client not Found!' });
+                // res.status(404).json({ msg: 'Invalid Id or Client not Found!' });
+                return next(new error_1.ErrorHandler('Invalid Id or Client not Found !', 404));
             }
             yield db_1.default.client.delete({
                 where: { id: parseInt(id) },
             });
             res.status(200).json({ msg: 'Client is Deleted !' });
         }
-        catch (error) { }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Client: Internal Server Error !', 500));
+        }
     });
 }

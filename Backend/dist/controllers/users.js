@@ -61,23 +61,29 @@ function login(req, res) {
         try {
             const { email, password } = req.body;
             const user = yield db_1.default.user.findUnique({
-                where: { email: email, password: password },
+                where: { email: email },
             });
             if (!user) {
                 return res.status(404).json({
                     msg: 'Invalid Username or Password / User Not Exist !',
                 });
             }
-            const token = jsonwebtoken_1.default.sign({
-                id: user.id,
-            }, config_1.JWT_SECRET, { expiresIn: '6h' });
-            res.cookie('authorization', `Bearer ${token}`);
-            return res.status(200).json({
-                id: user.id,
-                name: user.firstName + ' ' + user.lastName,
-                email: user.email,
-                msg: 'User Logged in successfully !',
-            });
+            const decodedPassword = yield bcrypt_1.default.compare(password, user.password);
+            if (!decodedPassword) {
+                return res.status(403).json({ msg: 'Invalid Password !' });
+            }
+            else {
+                const token = jsonwebtoken_1.default.sign({
+                    id: user.id,
+                }, config_1.JWT_SECRET, { expiresIn: '6h' });
+                res.cookie('authorization', `Bearer ${token}`);
+                return res.status(200).json({
+                    id: user.id,
+                    name: user.firstName + ' ' + user.lastName,
+                    email: user.email,
+                    msg: 'User Logged in successfully !',
+                });
+            }
         }
         catch (err) {
             console.log(err);

@@ -1,8 +1,12 @@
-import expres, { Request, Response } from 'express';
+import expres, { NextFunction, Request, Response } from 'express';
 import prisma from '../db';
 import { ErrorHandler } from '../helpers/error';
 
-export async function createClient(req: Request, res: Response) {
+export async function createClient(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { name, userId, contactInfo } = req.body;
   try {
     const user = await prisma.user.findUnique({
@@ -10,8 +14,8 @@ export async function createClient(req: Request, res: Response) {
     });
 
     if (!user) {
-      res.status(404).json({ msg: 'User Not Found !' });
-      //   return new ErrorHandler('User Not Found !', 404);
+      // res.status(404).json({ msg: 'User Not Found !' });
+      return next(new ErrorHandler('User Not Found !', 404));
     }
 
     const newClient = await prisma.client.create({
@@ -29,13 +33,17 @@ export async function createClient(req: Request, res: Response) {
       .status(200)
       .json({ msg: 'New Client Created Successfully !', data: newClient });
   } catch (error) {
-    console.log('Client error: ', error);
-    res.status(404).json({ msg: 'Client is Not Created !' });
-    // throw new ErrorHandler('Client is Not created !', 500);
+    return next(
+      new ErrorHandler('Create Client : Internal Server Error !', 500)
+    );
   }
 }
 
-export async function updateClient(req: Request, res: Response) {
+export async function updateClient(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { name, contactInfo } = req.body;
   const { id } = req.params;
   try {
@@ -44,8 +52,7 @@ export async function updateClient(req: Request, res: Response) {
     });
 
     if (!client) {
-      res.status(400).json({ msg: 'Client not Found !' });
-      //   return new ErrorHandler('Client Not Found !', 400);
+      return next(new ErrorHandler('Client Not Found !', 400));
     }
 
     const UpdatedClient = await prisma.client.update({
@@ -65,12 +72,15 @@ export async function updateClient(req: Request, res: Response) {
       .status(200)
       .json({ msg: 'Client Updated Successfully', data: UpdatedClient });
   } catch (error) {
-    res.status(500).json({ msg: 'Client Not Updated !' });
-    // throw new ErrorHandler('Client Not Updated !', 500);
+    return next(new ErrorHandler('Client: Internal Server Error!', 500));
   }
 }
 
-export async function delteClient(req: Request, res: Response) {
+export async function delteClient(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { id } = req.params;
   try {
     const client = await prisma.client.findUnique({
@@ -78,7 +88,7 @@ export async function delteClient(req: Request, res: Response) {
     });
 
     if (!client) {
-      res.status(404).json({ msg: 'Invalid Id or Client not Found!' });
+      return next(new ErrorHandler('Invalid Id or Client not Found !', 404));
     }
 
     await prisma.client.delete({
@@ -86,5 +96,9 @@ export async function delteClient(req: Request, res: Response) {
     });
 
     res.status(200).json({ msg: 'Client is Deleted !' });
-  } catch (error) {}
+  } catch (error) {
+    return next(
+      new ErrorHandler('Delete Client: Internal Server Error !', 500)
+    );
+  }
 }

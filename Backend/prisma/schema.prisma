@@ -32,7 +32,7 @@ model Client{
   name String
   contactInfo String?
   createdAt DateTime @default(now())
-  user User @relation(fields: [userId] , references: [id])
+  user User @relation(fields: [userId] , references: [id] , onDelete: Cascade)
   records DailyRecord[]
 
   @@index([userId])
@@ -45,7 +45,7 @@ model Service{
   unit String
   pricePerUnit Float
   createdAt DateTime @default(now())
-  user User @relation(fields: [userId] , references: [id])
+  user User @relation(fields: [userId] , references: [id] , onDelete: Cascade)
   records DailyRecord[]
 
   @@index([userId])
@@ -59,8 +59,8 @@ model DailyRecord{
   units Float
   totalPrice Float
   createdAt DateTime @default(now())
-  client Client @relation(fields: [clientId], references: [id])
-  service Service @relation(fields: [serviceId] , references: [id])
+  client Client @relation(fields: [clientId], references: [id] , onDelete: Cascade)
+  service Service @relation(fields: [serviceId] , references: [id] , onDelete: Cascade)
 
   @@unique([clientId,serviceId,date])
   @@index([clientId])

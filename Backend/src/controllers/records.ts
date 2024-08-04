@@ -18,10 +18,9 @@ export async function createRecord(
     });
 
     if (!service) {
-      //   next(new ErrorHandler('Service Not Found', 404));
-      return res
-        .status(404)
-        .json({ msg: 'Service Not Found Or Invalid Service Id!' });
+      return next(
+        new ErrorHandler('Service Not Found or Invalid Service Id!', 404)
+      );
     }
 
     const client = await prisma.client.findUnique({
@@ -29,7 +28,7 @@ export async function createRecord(
     });
 
     if (!client) {
-      return res.status(404).json({ msg: 'Client Not Found !' });
+      return next(new ErrorHandler('Client Not Found !', 404));
     }
 
     const newRecord = await prisma.dailyRecord.create({
@@ -44,13 +43,15 @@ export async function createRecord(
     });
     res.status(200).json({ msg: 'Record Created !', data: newRecord });
   } catch (error) {
-    console.log(error);
-
-    res.status(500).json({ msg: 'Internal Server Error' });
+    return next(new ErrorHandler('Create Record: Internal Server Error!', 500));
   }
 }
 
-export async function updateRecord(req: Request, res: Response) {
+export async function updateRecord(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { units, totalPrice, date } = req.body;
   const { sId, cId, id } = req.params;
   const clientId = parseInt(cId);
@@ -61,17 +62,16 @@ export async function updateRecord(req: Request, res: Response) {
       where: { id: recordId },
     });
     if (!record) {
-      return res.status(404).json({ msg: 'Record Not Found !' });
+      return next(new ErrorHandler('Record Not Found !', 404));
     }
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
     });
 
     if (!service) {
-      //   next(new ErrorHandler('Service Not Found', 404));
-      return res
-        .status(404)
-        .json({ msg: 'Service Not Found Or Invalid Service Id!' });
+      return next(
+        new ErrorHandler('Service Not Found Or Invalid Service Id!', 404)
+      );
     }
 
     const client = await prisma.client.findUnique({
@@ -79,7 +79,7 @@ export async function updateRecord(req: Request, res: Response) {
     });
 
     if (!client) {
-      return res.status(404).json({ msg: 'Client Not Found !' });
+      return next(new ErrorHandler('Client Not Found !', 404));
     }
 
     const updatedRecord = await prisma.dailyRecord.update({
@@ -95,12 +95,17 @@ export async function updateRecord(req: Request, res: Response) {
       .status(200)
       .json({ msg: 'Record Updated Successfully !', data: updatedRecord });
   } catch (error) {
-    res.status(500).json({ msg: 'Record : Internal Server Error' });
+    return next(
+      new ErrorHandler('Update Record : Internal Server Error!', 500)
+    );
   }
 }
 
-export async function deleteRecord(req: Request, res: Response) {
-  const { units, totalPrice, date } = req.body;
+export async function deleteRecord(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { sId, cId, id } = req.params;
   const clientId = parseInt(cId);
   const serviceId = parseInt(sId);
@@ -111,16 +116,16 @@ export async function deleteRecord(req: Request, res: Response) {
       where: { id: recordId },
     });
     if (!record) {
-      return res.status(404).json({ msg: 'Record Not Found !' });
+      return next(new ErrorHandler('Record Not Found !', 404));
     }
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
     });
 
     if (!service) {
-      return res
-        .status(404)
-        .json({ msg: 'Service Not Found Or Invalid Service Id!' });
+      return next(
+        new ErrorHandler('Service Not Found Or Invalid Service Id!', 404)
+      );
     }
 
     const client = await prisma.client.findUnique({
@@ -128,7 +133,7 @@ export async function deleteRecord(req: Request, res: Response) {
     });
 
     if (!client) {
-      return res.status(404).json({ msg: 'Client Not Found !' });
+      return next(new ErrorHandler('Client Not Found !', 404));
     }
 
     await prisma.dailyRecord.delete({
@@ -137,6 +142,8 @@ export async function deleteRecord(req: Request, res: Response) {
 
     res.status(200).json({ msg: 'Record Deleted !' });
   } catch (error) {
-    res.status(500).json({ msg: 'Delete Record: Internal Server Error !' });
+    return next(
+      new ErrorHandler('Delete Record: Internal Server Error !', 500)
+    );
   }
 }
