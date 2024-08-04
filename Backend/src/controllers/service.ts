@@ -1,5 +1,6 @@
 import prisma from "../db";
 import { Request, Response, Router } from "express";
+import { ErrorHandler } from "../helpers/error";
 
 export async function createService(req: Request, res: Response) {
   try {
@@ -21,7 +22,8 @@ export async function createService(req: Request, res: Response) {
       .json({ msg: "Service created Successfully", data: service });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ msg: "Internal Server Error" });
+    throw new ErrorHandler("Error occurred while creating Service", 500);
+    // res.status(500).json({ msg: "Internal Server Error" });
   }
 }
 
@@ -38,8 +40,8 @@ export async function updateService(req: Request, res: Response) {
       where: { id: serviceId },
     });
 
-    if(!service){
-      return res.status(400).json({msg: "Service Not Found"});
+    if (!service) {
+      return res.status(400).json({ msg: "Service Not Found" });
     }
 
     const { serviceName, unit, pricePerUnit } = req.body;
@@ -54,7 +56,33 @@ export async function updateService(req: Request, res: Response) {
       .status(200)
       .json({ msg: "Service Updated Successfully", data: updateService });
   } catch (err) {
-    res.status(404).json({ msg: "Service Not found", err: err });
+    throw new ErrorHandler("Error occurred while Updating Service", 500);
+    // res.status(500).json({ msg: "Internal server Error", err: err });
     console.log(err);
+  }
+}
+
+export async function deleteService(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    if (!id) {
+      return res.status(400).json({ msg: "Invalid Service ID" });
+    }
+
+    const service = await prisma.service.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!service) {
+      return res.status(400).json({ msg: "Service Not Found !" });
+    }
+
+    await prisma.service.delete({ where: { id: parseInt(id) } }).then(() => {
+      res.status(400).json({ msg: "Service Deleted Successfully!" });
+    });
+  } catch (error) {
+    console.log("Error Deleting Service :", error);
+    throw new ErrorHandler("Error occurred while Deleting Service", 500);
+    // res.status(500).json({ msg: "Internal Server Error" });
   }
 }

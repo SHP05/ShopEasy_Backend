@@ -21,7 +21,7 @@ model User{
   shopName String
   createdAt DateTime @default(now())
   password String 
-  avatar String @default("/Avatar/default-user.jpg")
+  avatar String @default("/defaultAvatar.jpg")
   clients Client[]
   services Service[]
 }
@@ -55,14 +55,14 @@ model DailyRecord{
   id Int @id @default(autoincrement())
   clientId Int
   serviceId Int
-  recodeDate DateTime
+  date DateTime
   units Float
   totalPrice Float
   createdAt DateTime @default(now())
   client Client @relation(fields: [clientId], references: [id])
   service Service @relation(fields: [serviceId] , references: [id])
 
-  @@unique([clientId,serviceId,recodeDate])
+  @@unique([clientId,serviceId,date])
   @@index([clientId])
   @@index([serviceId])
 }

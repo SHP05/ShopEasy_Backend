@@ -1,8 +1,9 @@
-import prisma from "../db";
-import { Request, Response } from "express";
-import { JWT_SECRET } from "../config/config";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import prisma from '../db';
+import { Request, Response } from 'express';
+import { JWT_SECRET } from '../config/config';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import { ErrorHandler } from '../helpers/error';
 
 export async function register(req: Request, res: Response) {
   try {
@@ -10,7 +11,7 @@ export async function register(req: Request, res: Response) {
     const existUser = await prisma.user.findUnique({ where: { email: email } });
 
     if (existUser) {
-      return res.status(409).json({ msg: "USer Already exist!" });
+      return res.status(409).json({ msg: 'USer Already exist!' });
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
@@ -35,14 +36,15 @@ export async function register(req: Request, res: Response) {
       JWT_SECRET
     );
 
-    res.cookie("authorization", `Bearer ${token}`);
+    res.cookie('authorization', `Bearer ${token}`);
 
     return res
       .status(201)
-      .json({ msg: "User Created Successfully !", data: newUser });
+      .json({ msg: 'User Created Successfully !', data: newUser });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Internal Server Error" });
+    throw new ErrorHandler('Error occurred while Register', 500);
+    // res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
@@ -56,7 +58,7 @@ export async function login(req: Request, res: Response) {
 
     if (!user) {
       return res.status(404).json({
-        msg: "Invalid Username or Password / User Not Exist !",
+        msg: 'Invalid Username or Password / User Not Exist !',
       });
     }
 
@@ -64,18 +66,27 @@ export async function login(req: Request, res: Response) {
       {
         id: user.id,
       },
-      JWT_SECRET
+      JWT_SECRET,
+      { expiresIn: '6h' }
     );
 
-    res.cookie("authorization", `Bearer ${token}`);
+    res.cookie('authorization', `Bearer ${token}`);
     return res.status(200).json({
       id: user.id,
-      name: user.firstName + " " + user.lastName,
+      name: user.firstName + ' ' + user.lastName,
       email: user.email,
-      msg: "User Logged in successfully !",
+      msg: 'User Logged in successfully !',
     });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ msg: "Internal Sever Error" });
+    throw new ErrorHandler('Error occurred while Login', 500);
+    // res.status(500).json({ msg: "Internal Sever Error" });
   }
+}
+
+export async function logOut(req: Request, res: Response) {
+  res
+    .status(200)
+    .clearCookie('authorization')
+    .json({ msg: 'User Logged Out successfully !' });
 }
