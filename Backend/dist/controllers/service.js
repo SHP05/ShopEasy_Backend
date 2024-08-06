@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createService = createService;
 exports.updateService = updateService;
 exports.deleteService = deleteService;
+exports.getServices = getServices;
 const db_1 = __importDefault(require("../db"));
 const error_1 = require("../helpers/error");
 function createService(req, res, next) {
@@ -89,6 +90,26 @@ function deleteService(req, res, next) {
         }
         catch (error) {
             return next(new error_1.ErrorHandler('Delete Service : Internal Server Error', 500));
+        }
+    });
+}
+function getServices(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { id } = req.params;
+        try {
+            const user = yield db_1.default.user.findUnique({
+                where: { id: parseInt(id) },
+            });
+            if (!user) {
+                return next(new error_1.ErrorHandler('User Not Exist Or Invalid User ID!', 404));
+            }
+            const services = yield db_1.default.service.findMany({
+                where: { userId: parseInt(id) },
+            });
+            res.status(200).json({ msg: 'Services...', data: services });
+        }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Get Service : Internal Server Error', 500));
         }
     });
 }

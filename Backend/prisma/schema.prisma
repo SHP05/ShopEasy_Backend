@@ -57,6 +57,7 @@ model DailyRecord{
   serviceId Int
   date DateTime
   units Float
+  price Float @default(0)
   totalPrice Float
   createdAt DateTime @default(now())
   client Client @relation(fields: [clientId], references: [id] , onDelete: Cascade)

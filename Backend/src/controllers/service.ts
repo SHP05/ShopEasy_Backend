@@ -96,3 +96,29 @@ export async function deleteService(
     );
   }
 }
+
+export async function getServices(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { id } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!user) {
+      return next(new ErrorHandler('User Not Exist Or Invalid User ID!', 404));
+    }
+
+    const services = await prisma.service.findMany({
+      where: { userId: parseInt(id) },
+    });
+
+    res.status(200).json({ msg: 'Services...', data: services });
+  } catch (error) {
+    return next(new ErrorHandler('Get Service : Internal Server Error', 500));
+  }
+}

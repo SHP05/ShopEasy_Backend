@@ -16,11 +16,12 @@ exports.createRecord = createRecord;
 exports.updateRecord = updateRecord;
 exports.deleteRecord = deleteRecord;
 exports.searchRecords = searchRecords;
+exports.getRecords = getRecords;
 const db_1 = __importDefault(require("../db"));
 const error_1 = require("../helpers/error");
 function createRecord(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { units, totalPrice, date } = req.body;
+        const { units, totalPrice, date, price } = req.body;
         const { cId, sId } = req.params;
         const clientId = parseInt(cId);
         const serviceId = parseInt(sId);
@@ -37,19 +38,22 @@ function createRecord(req, res, next) {
             if (!client) {
                 return next(new error_1.ErrorHandler('Client Not Found !', 404));
             }
+            const parseDate = new Date(date);
             const newRecord = yield db_1.default.dailyRecord.create({
-                data: { clientId, serviceId, units, totalPrice, date },
+                data: { clientId, serviceId, units, totalPrice, date: parseDate, price },
                 select: {
                     client: true,
                     serviceId: true,
                     units: true,
                     totalPrice: true,
                     date: true,
+                    price: true,
                 },
             });
             res.status(200).json({ msg: 'Record Created !', data: newRecord });
         }
         catch (error) {
+            console.log(error);
             return next(new error_1.ErrorHandler('Create Record: Internal Server Error!', 500));
         }
     });
@@ -157,6 +161,30 @@ function searchRecords(req, res, next) {
         }
         catch (error) {
             return next(new error_1.ErrorHandler('Search Record : Internal Serer Error !', 500));
+        }
+    });
+}
+function getRecords(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { clientId } = req.params;
+        try {
+            const client = yield db_1.default.client.findUnique({
+                where: {
+                    id: parseInt(clientId),
+                },
+            });
+            if (!client) {
+                return next(new error_1.ErrorHandler('Client Not Found!', 404));
+            }
+            const records = yield db_1.default.dailyRecord.findMany({
+                where: {
+                    clientId: parseInt(clientId),
+                },
+            });
+            res.status(200).json({ msg: 'Client Records...', data: records });
+        }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Get Records: Internal Server Error!', 500));
         }
     });
 }

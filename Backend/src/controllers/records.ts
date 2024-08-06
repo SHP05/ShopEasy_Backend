@@ -7,7 +7,7 @@ export async function createRecord(
   res: Response,
   next: NextFunction
 ) {
-  const { units, totalPrice, date } = req.body;
+  const { units, totalPrice, date, price } = req.body;
   const { cId, sId } = req.params;
   const clientId = parseInt(cId);
   const serviceId = parseInt(sId);
@@ -31,18 +31,22 @@ export async function createRecord(
       return next(new ErrorHandler('Client Not Found !', 404));
     }
 
+    const parseDate = new Date(date);
     const newRecord = await prisma.dailyRecord.create({
-      data: { clientId, serviceId, units, totalPrice, date },
+      data: { clientId, serviceId, units, totalPrice, date: parseDate, price },
       select: {
         client: true,
         serviceId: true,
         units: true,
         totalPrice: true,
         date: true,
+        price: true,
       },
     });
     res.status(200).json({ msg: 'Record Created !', data: newRecord });
   } catch (error) {
+    console.log(error);
+
     return next(new ErrorHandler('Create Record: Internal Server Error!', 500));
   }
 }
@@ -153,24 +157,36 @@ export async function searchRecords(
   res: Response,
   next: NextFunction
 ) {
-  const { date } = req.query;
+  const { startDate, endDate } = req.query;
 
-  if (!date || typeof date !== 'string') {
+  if (
+    !startDate ||
+    typeof startDate !== 'string' ||
+    !endDate ||
+    typeof endDate !== 'string'
+  ) {
     return next(
-      new ErrorHandler('Query Parameter is Required and Must be string ', 400)
+      new ErrorHandler(
+        'StartDate and EndDate Parameters is Required and Must be string ',
+        400
+      )
     );
   }
 
-  const parseDate = new Date(date);
-  console.log(parseDate);
-  if (isNaN(parseDate.getTime())) {
+  const parsedStartDate = new Date(startDate);
+  const parsedEndDate = new Date(endDate);
+  console.log(parsedStartDate, parsedEndDate);
+  if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
     return next(new ErrorHandler('Invalid Date Formate !', 400));
   }
 
   try {
     const records = await prisma.dailyRecord.findMany({
       where: {
-        date: parseDate,
+        date: {
+          gte: parsedStartDate,
+          lte: parsedEndDate,
+        },
       },
       include: {
         client: true,
