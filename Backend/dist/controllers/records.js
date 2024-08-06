@@ -15,7 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRecord = createRecord;
 exports.updateRecord = updateRecord;
 exports.deleteRecord = deleteRecord;
+exports.searchRecords = searchRecords;
 const db_1 = __importDefault(require("../db"));
+const error_1 = require("../helpers/error");
 function createRecord(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const { units, totalPrice, date } = req.body;
@@ -27,16 +29,13 @@ function createRecord(req, res, next) {
                 where: { id: serviceId },
             });
             if (!service) {
-                //   next(new ErrorHandler('Service Not Found', 404));
-                return res
-                    .status(404)
-                    .json({ msg: 'Service Not Found Or Invalid Service Id!' });
+                return next(new error_1.ErrorHandler('Service Not Found or Invalid Service Id!', 404));
             }
             const client = yield db_1.default.client.findUnique({
                 where: { id: clientId },
             });
             if (!client) {
-                return res.status(404).json({ msg: 'Client Not Found !' });
+                return next(new error_1.ErrorHandler('Client Not Found !', 404));
             }
             const newRecord = yield db_1.default.dailyRecord.create({
                 data: { clientId, serviceId, units, totalPrice, date },
@@ -51,12 +50,11 @@ function createRecord(req, res, next) {
             res.status(200).json({ msg: 'Record Created !', data: newRecord });
         }
         catch (error) {
-            console.log(error);
-            res.status(500).json({ msg: 'Internal Server Error' });
+            return next(new error_1.ErrorHandler('Create Record: Internal Server Error!', 500));
         }
     });
 }
-function updateRecord(req, res) {
+function updateRecord(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const { units, totalPrice, date } = req.body;
         const { sId, cId, id } = req.params;
@@ -68,22 +66,19 @@ function updateRecord(req, res) {
                 where: { id: recordId },
             });
             if (!record) {
-                return res.status(404).json({ msg: 'Record Not Found !' });
+                return next(new error_1.ErrorHandler('Record Not Found !', 404));
             }
             const service = yield db_1.default.service.findUnique({
                 where: { id: serviceId },
             });
             if (!service) {
-                //   next(new ErrorHandler('Service Not Found', 404));
-                return res
-                    .status(404)
-                    .json({ msg: 'Service Not Found Or Invalid Service Id!' });
+                return next(new error_1.ErrorHandler('Service Not Found Or Invalid Service Id!', 404));
             }
             const client = yield db_1.default.client.findUnique({
                 where: { id: clientId },
             });
             if (!client) {
-                return res.status(404).json({ msg: 'Client Not Found !' });
+                return next(new error_1.ErrorHandler('Client Not Found !', 404));
             }
             const updatedRecord = yield db_1.default.dailyRecord.update({
                 where: { id: recordId },
@@ -98,13 +93,12 @@ function updateRecord(req, res) {
                 .json({ msg: 'Record Updated Successfully !', data: updatedRecord });
         }
         catch (error) {
-            res.status(500).json({ msg: 'Record : Internal Server Error' });
+            return next(new error_1.ErrorHandler('Update Record : Internal Server Error!', 500));
         }
     });
 }
-function deleteRecord(req, res) {
+function deleteRecord(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { units, totalPrice, date } = req.body;
         const { sId, cId, id } = req.params;
         const clientId = parseInt(cId);
         const serviceId = parseInt(sId);
@@ -114,21 +108,19 @@ function deleteRecord(req, res) {
                 where: { id: recordId },
             });
             if (!record) {
-                return res.status(404).json({ msg: 'Record Not Found !' });
+                return next(new error_1.ErrorHandler('Record Not Found !', 404));
             }
             const service = yield db_1.default.service.findUnique({
                 where: { id: serviceId },
             });
             if (!service) {
-                return res
-                    .status(404)
-                    .json({ msg: 'Service Not Found Or Invalid Service Id!' });
+                return next(new error_1.ErrorHandler('Service Not Found Or Invalid Service Id!', 404));
             }
             const client = yield db_1.default.client.findUnique({
                 where: { id: clientId },
             });
             if (!client) {
-                return res.status(404).json({ msg: 'Client Not Found !' });
+                return next(new error_1.ErrorHandler('Client Not Found !', 404));
             }
             yield db_1.default.dailyRecord.delete({
                 where: { id: recordId },
@@ -136,7 +128,35 @@ function deleteRecord(req, res) {
             res.status(200).json({ msg: 'Record Deleted !' });
         }
         catch (error) {
-            res.status(500).json({ msg: 'Delete Record: Internal Server Error !' });
+            return next(new error_1.ErrorHandler('Delete Record: Internal Server Error !', 500));
+        }
+    });
+}
+function searchRecords(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { date } = req.query;
+        if (!date || typeof date !== 'string') {
+            return next(new error_1.ErrorHandler('Query Parameter is Required and Must be string ', 400));
+        }
+        const parseDate = new Date(date);
+        console.log(parseDate);
+        if (isNaN(parseDate.getTime())) {
+            return next(new error_1.ErrorHandler('Invalid Date Formate !', 400));
+        }
+        try {
+            const records = yield db_1.default.dailyRecord.findMany({
+                where: {
+                    date: parseDate,
+                },
+                include: {
+                    client: true,
+                    service: true,
+                },
+            });
+            res.status(200).json({ msg: 'Serch Records..', data: records });
+        }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Search Record : Internal Serer Error !', 500));
         }
     });
 }

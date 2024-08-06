@@ -17,7 +17,7 @@ exports.updateService = updateService;
 exports.deleteService = deleteService;
 const db_1 = __importDefault(require("../db"));
 const error_1 = require("../helpers/error");
-function createService(req, res) {
+function createService(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { userId, serviceName, unit, pricePerUnit } = req.body;
@@ -33,28 +33,26 @@ function createService(req, res) {
             });
             res
                 .status(201)
-                .json({ msg: "Service created Successfully", data: service });
+                .json({ msg: 'Service created Successfully', data: service });
         }
         catch (err) {
-            console.log(err);
-            throw new error_1.ErrorHandler("Error occurred while creating Service", 500);
-            // res.status(500).json({ msg: "Internal Server Error" });
+            return next(new error_1.ErrorHandler('Service : Internal Server Error !', 500));
         }
     });
 }
-function updateService(req, res) {
+function updateService(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { id } = req.params;
             const serviceId = parseInt(id);
             if (!serviceId) {
-                return res.status(400).json({ msg: "Invalid Service ID" });
+                return next(new error_1.ErrorHandler('Invalid Service ID !', 400));
             }
             const service = yield db_1.default.service.findUnique({
                 where: { id: serviceId },
             });
             if (!service) {
-                return res.status(400).json({ msg: "Service Not Found" });
+                return next(new error_1.ErrorHandler('Service Not Found !', 400));
             }
             const { serviceName, unit, pricePerUnit } = req.body;
             const updateService = yield db_1.default.service.update({
@@ -65,36 +63,32 @@ function updateService(req, res) {
             });
             res
                 .status(200)
-                .json({ msg: "Service Updated Successfully", data: updateService });
+                .json({ msg: 'Service Updated Successfully', data: updateService });
         }
         catch (err) {
-            throw new error_1.ErrorHandler("Error occurred while Updating Service", 500);
-            // res.status(500).json({ msg: "Internal server Error", err: err });
-            console.log(err);
+            return next(new error_1.ErrorHandler('Update Service : Internal Server Error !', 500));
         }
     });
 }
-function deleteService(req, res) {
+function deleteService(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const { id } = req.params;
         try {
             if (!id) {
-                return res.status(400).json({ msg: "Invalid Service ID" });
+                return next(new error_1.ErrorHandler('Invalid Service ID!', 400));
             }
             const service = yield db_1.default.service.findUnique({
                 where: { id: parseInt(id) },
             });
             if (!service) {
-                return res.status(400).json({ msg: "Service Not Found !" });
+                return next(new error_1.ErrorHandler('Service Not Found !', 400));
             }
             yield db_1.default.service.delete({ where: { id: parseInt(id) } }).then(() => {
-                res.status(400).json({ msg: "Service Deleted Successfully!" });
+                res.status(400).json({ msg: 'Service Deleted Successfully!' });
             });
         }
         catch (error) {
-            console.log("Error Deleting Service :", error);
-            throw new error_1.ErrorHandler("Error occurred while Deleting Service", 500);
-            // res.status(500).json({ msg: "Internal Server Error" });
+            return next(new error_1.ErrorHandler('Delete Service : Internal Server Error', 500));
         }
     });
 }

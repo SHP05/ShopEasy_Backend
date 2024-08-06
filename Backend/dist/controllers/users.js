@@ -20,13 +20,13 @@ const config_1 = require("../config/config");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const error_1 = require("../helpers/error");
-function register(req, res) {
+function register(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { firstName, lastName, email, password, shopName } = req.body;
             const existUser = yield db_1.default.user.findUnique({ where: { email: email } });
             if (existUser) {
-                return res.status(409).json({ msg: 'USer Already exist!' });
+                return next(new error_1.ErrorHandler('User Already exist!', 409));
             }
             const hashPassword = yield bcrypt_1.default.hash(password, 10);
             const newUser = yield db_1.default.user.create({
@@ -51,12 +51,11 @@ function register(req, res) {
         }
         catch (e) {
             console.log(e);
-            throw new error_1.ErrorHandler('Error occurred while Register', 500);
-            // res.status(500).json({ message: "Internal Server Error" });
+            return next(new error_1.ErrorHandler('Register: Internal Server Error!', 500));
         }
     });
 }
-function login(req, res) {
+function login(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { email, password } = req.body;
@@ -64,13 +63,11 @@ function login(req, res) {
                 where: { email: email },
             });
             if (!user) {
-                return res.status(404).json({
-                    msg: 'Invalid Username or Password / User Not Exist !',
-                });
+                return next(new error_1.ErrorHandler('Invalid Username or Password / User Not Exist !', 404));
             }
             const decodedPassword = yield bcrypt_1.default.compare(password, user.password);
             if (!decodedPassword) {
-                return res.status(403).json({ msg: 'Invalid Password !' });
+                return next(new error_1.ErrorHandler('Invalid Password !', 403));
             }
             else {
                 const token = jsonwebtoken_1.default.sign({
@@ -87,8 +84,7 @@ function login(req, res) {
         }
         catch (err) {
             console.log(err);
-            throw new error_1.ErrorHandler('Error occurred while Login', 500);
-            // res.status(500).json({ msg: "Internal Sever Error" });
+            return next(new error_1.ErrorHandler('Login : Internal Server Error!', 500));
         }
     });
 }

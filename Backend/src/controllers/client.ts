@@ -102,3 +102,63 @@ export async function delteClient(
     );
   }
 }
+
+export async function searchClient(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { query } = req.query;
+
+  if (!query || typeof query !== 'string') {
+    return next(
+      new ErrorHandler(
+        'Query parameter is required and must be a string !',
+        400
+      )
+    );
+  }
+
+  try {
+    const clients = await prisma.client.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { contactInfo: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    res.status(200).json({ msg: 'Searching Clients..', data: clients });
+  } catch (error) {
+    return next(new ErrorHandler('Internal Server Error !', 500));
+  }
+}
+
+export async function getClients(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { userId } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+    });
+
+    if (!user) {
+      return next(new ErrorHandler('User Not Exist Or Invalid User ID !', 404));
+    }
+
+    const clients = await prisma.client.findMany({
+      where: {
+        userId: parseInt(userId),
+      },
+    });
+
+    res.status(200).json({ msg: 'Clients Data', data: clients });
+  } catch (error) {
+    return next(new ErrorHandler('Get Clients: Internal Server Error!', 500));
+  }
+}

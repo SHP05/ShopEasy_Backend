@@ -147,3 +147,71 @@ export async function deleteRecord(
     );
   }
 }
+
+export async function searchRecords(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { date } = req.query;
+
+  if (!date || typeof date !== 'string') {
+    return next(
+      new ErrorHandler('Query Parameter is Required and Must be string ', 400)
+    );
+  }
+
+  const parseDate = new Date(date);
+  console.log(parseDate);
+  if (isNaN(parseDate.getTime())) {
+    return next(new ErrorHandler('Invalid Date Formate !', 400));
+  }
+
+  try {
+    const records = await prisma.dailyRecord.findMany({
+      where: {
+        date: parseDate,
+      },
+      include: {
+        client: true,
+        service: true,
+      },
+    });
+
+    res.status(200).json({ msg: 'Serch Records..', data: records });
+  } catch (error) {
+    return next(
+      new ErrorHandler('Search Record : Internal Serer Error !', 500)
+    );
+  }
+}
+
+export async function getRecords(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { clientId } = req.params;
+
+  try {
+    const client = await prisma.client.findUnique({
+      where: {
+        id: parseInt(clientId),
+      },
+    });
+
+    if (!client) {
+      return next(new ErrorHandler('Client Not Found!', 404));
+    }
+
+    const records = await prisma.dailyRecord.findMany({
+      where: {
+        clientId: parseInt(clientId),
+      },
+    });
+
+    res.status(200).json({ msg: 'Client Records...', data: records });
+  } catch (error) {
+    return next(new ErrorHandler('Get Records: Internal Server Error!', 500));
+  }
+}

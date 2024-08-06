@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createClient = createClient;
 exports.updateClient = updateClient;
 exports.delteClient = delteClient;
+exports.searchClient = searchClient;
+exports.getClients = getClients;
 const db_1 = __importDefault(require("../db"));
 const error_1 = require("../helpers/error");
 function createClient(req, res, next) {
@@ -25,8 +27,8 @@ function createClient(req, res, next) {
                 where: { id: userId },
             });
             if (!user) {
-                res.status(404).json({ msg: 'User Not Found !' });
-                //   return new ErrorHandler('User Not Found !', 404);
+                // res.status(404).json({ msg: 'User Not Found !' });
+                return next(new error_1.ErrorHandler('User Not Found !', 404));
             }
             const newClient = yield db_1.default.client.create({
                 data: { userId, name, contactInfo },
@@ -43,9 +45,7 @@ function createClient(req, res, next) {
                 .json({ msg: 'New Client Created Successfully !', data: newClient });
         }
         catch (error) {
-            console.log('Client error: ', error);
-            // res.status(404).json({ msg: 'Client is Not Created !' });
-            return next(new error_1.ErrorHandler('Client : Client is Not created !', 500));
+            return next(new error_1.ErrorHandler('Create Client : Internal Server Error !', 500));
         }
     });
 }
@@ -58,7 +58,6 @@ function updateClient(req, res, next) {
                 where: { id: parseInt(id) },
             });
             if (!client) {
-                // res.status(400).json({ msg: 'Client not Found !' });
                 return next(new error_1.ErrorHandler('Client Not Found !', 400));
             }
             const UpdatedClient = yield db_1.default.client.update({
@@ -78,7 +77,6 @@ function updateClient(req, res, next) {
                 .json({ msg: 'Client Updated Successfully', data: UpdatedClient });
         }
         catch (error) {
-            // res.status(500).json({ msg: 'Internal Server Error!!' });
             return next(new error_1.ErrorHandler('Client: Internal Server Error!', 500));
         }
     });
@@ -91,7 +89,6 @@ function delteClient(req, res, next) {
                 where: { id: parseInt(id) },
             });
             if (!client) {
-                // res.status(404).json({ msg: 'Invalid Id or Client not Found!' });
                 return next(new error_1.ErrorHandler('Invalid Id or Client not Found !', 404));
             }
             yield db_1.default.client.delete({
@@ -100,7 +97,51 @@ function delteClient(req, res, next) {
             res.status(200).json({ msg: 'Client is Deleted !' });
         }
         catch (error) {
-            return next(new error_1.ErrorHandler('Client: Internal Server Error !', 500));
+            return next(new error_1.ErrorHandler('Delete Client: Internal Server Error !', 500));
+        }
+    });
+}
+function searchClient(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { query } = req.query;
+        if (!query || typeof query !== 'string') {
+            return next(new error_1.ErrorHandler('Query parameter is required and must be a string !', 400));
+        }
+        try {
+            const clients = yield db_1.default.client.findMany({
+                where: {
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { contactInfo: { contains: query, mode: 'insensitive' } },
+                    ],
+                },
+            });
+            res.status(200).json({ msg: 'Searching Clients..', data: clients });
+        }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Internal Server Error !', 500));
+        }
+    });
+}
+function getClients(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { userId } = req.params;
+        try {
+            const user = yield db_1.default.user.findUnique({
+                where: { id: parseInt(userId) },
+            });
+            if (!user) {
+                return next(new error_1.ErrorHandler('User Not Exist Or Invalid User ID !', 404));
+            }
+            const clients = yield db_1.default.client.findMany({
+                where: {
+                    userId: parseInt(userId),
+                },
+            });
+            res.status(200).json({ msg: 'Clients Data', data: clients });
+        }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Get Clients: Internal Server Error!', 500));
         }
     });
 }
