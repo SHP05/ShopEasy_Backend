@@ -157,7 +157,7 @@ export async function searchRecords(
   res: Response,
   next: NextFunction
 ) {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate } = req.body;
 
   if (
     !startDate ||
@@ -175,7 +175,6 @@ export async function searchRecords(
 
   const parsedStartDate = new Date(startDate);
   const parsedEndDate = new Date(endDate);
-  console.log(parsedStartDate, parsedEndDate);
   if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
     return next(new ErrorHandler('Invalid Date Formate !', 400));
   }

@@ -15,11 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.register = register;
 exports.login = login;
 exports.logOut = logOut;
+exports.updateUser = updateUser;
+exports.forgotPassword = forgotPassword;
 const db_1 = __importDefault(require("../db"));
 const config_1 = require("../config/config");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const error_1 = require("../helpers/error");
+const nodemailer_1 = __importDefault(require("nodemailer"));
 function register(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -94,5 +97,76 @@ function logOut(req, res) {
             .status(200)
             .clearCookie('authorization')
             .json({ msg: 'User Logged Out successfully !' });
+    });
+}
+function updateUser(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { firstName, lastName, shopName } = req.body;
+        const { id } = req.params;
+        try {
+            const user = yield db_1.default.user.findUnique({
+                where: { id: parseInt(id) },
+            });
+            if (!user) {
+                return next(new error_1.ErrorHandler('User Not Exist Or Invalid user ID !', 403));
+            }
+            const updateUser = yield db_1.default.user.update({
+                where: { id: parseInt(id) },
+                data: { firstName, lastName, shopName },
+            });
+            res.status(200).json({ msg: 'User Updated !', data: updateUser });
+        }
+        catch (error) {
+            return next(new error_1.ErrorHandler('Update User :Internal Server Error', 500));
+        }
+    });
+}
+function forgotPassword(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            // find user by email
+            const user = yield db_1.default.user.findUnique({
+                where: { email: req.body.email },
+            });
+            // if user not exist
+            if (!user) {
+                return next(new error_1.ErrorHandler('User Not Found Or Invalid User ID !', 403));
+            }
+            // generate unique jwt token
+            const token = jsonwebtoken_1.default.sign({ id: user.id }, config_1.JWT_SECRET, {
+                expiresIn: '2h',
+            });
+            //send the token to the user's mail
+            const transporter = nodemailer_1.default.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL,
+                    pass: process.env.PASSWORD_APP_EMAIL,
+                },
+            });
+            const sortToken = token.split('.')[1];
+            // Email configuration
+            const mailOptions = {
+                from: process.env.EMAIL,
+                to: req.body.email,
+                subject: 'Reset Password',
+                html: `<h1>Reset Your Password</h1>
+        <p>Click on the following link to reset your password:</p>
+        <a href="http://localhost:5173/reset/${sortToken}">http://localhost:5173/reset/${sortToken}</a>
+        <h3>Token : ${token}</h3>
+        <p>The link will expire in 10 minutes.</p>
+        <p>If you didn't request a password reset, please ignore this email.</p>`,
+            };
+            transporter.sendMail(mailOptions, (err, info) => {
+                if (err) {
+                    return res.status(500).json({ message: err.message });
+                }
+                res.status(200).json({ message: 'Email sent' });
+            });
+        }
+        catch (err) {
+            console.log(err);
+            return next(new error_1.ErrorHandler('Forgot Password: Internal Server Error !', 500));
+        }
     });
 }

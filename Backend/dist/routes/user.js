@@ -11,3 +11,5 @@ exports.router = (0, express_1.Router)();
 exports.router.post('/register', users_1.register);
 exports.router.post('/login', users_1.login);
 exports.router.post('/logout', auth_1.default, users_1.logOut);
+exports.router.put('/update/:id', auth_1.default, users_1.updateUser);
+exports.router.post('/forgotPass', auth_1.default, users_1.forgotPassword);

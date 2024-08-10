@@ -138,19 +138,25 @@ function deleteRecord(req, res, next) {
 }
 function searchRecords(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { date } = req.query;
-        if (!date || typeof date !== 'string') {
-            return next(new error_1.ErrorHandler('Query Parameter is Required and Must be string ', 400));
+        const { startDate, endDate } = req.body;
+        if (!startDate ||
+            typeof startDate !== 'string' ||
+            !endDate ||
+            typeof endDate !== 'string') {
+            return next(new error_1.ErrorHandler('StartDate and EndDate Parameters is Required and Must be string ', 400));
         }
-        const parseDate = new Date(date);
-        console.log(parseDate);
-        if (isNaN(parseDate.getTime())) {
+        const parsedStartDate = new Date(startDate);
+        const parsedEndDate = new Date(endDate);
+        if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
             return next(new error_1.ErrorHandler('Invalid Date Formate !', 400));
         }
         try {
             const records = yield db_1.default.dailyRecord.findMany({
                 where: {
-                    date: parseDate,
+                    date: {
+                        gte: parsedStartDate,
+                        lte: parsedEndDate,
+                    },
                 },
                 include: {
                     client: true,
