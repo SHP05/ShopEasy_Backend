@@ -11,7 +11,8 @@ const index_1 = require("./routes/index");
 const error_1 = require("./helpers/error");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3001;
+console.log(PORT);
 const corsOption = {
     credentials: true,
     origin: ['http://localhost:5173'],

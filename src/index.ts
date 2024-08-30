@@ -7,8 +7,7 @@ import { handleError } from './helpers/error';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
-
+const PORT = process.env.PORT || 3001;
 const corsOption = {
   credentials: true,
   origin: ['http://localhost:5173'],
