@@ -12,6 +12,6 @@ export const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/logout', authmiddleware, logOut);
+router.post('/logout', logOut);
 router.put('/update/:id', authmiddleware, updateUser);
 router.post('/forgotPass', authmiddleware, forgotPassword);
